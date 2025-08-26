@@ -1,0 +1,183 @@
+name: Deploy to Oracle Cloud
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+  pull_request:
+    branches:
+      - main
+      - staging
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+          
+      - name: Run tests
+        run: |
+          pytest --cov=./ --cov-report=xml
+          
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Extract branch name
+        shell: bash
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
+        
+      - name: Build and push backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/backend:${{ env.BRANCH_NAME }}
+            ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/frontend:${{ env.BRANCH_NAME }}
+            ghcr.io/${{ github.repository }}/frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to Oracle Cloud
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up Oracle Cloud Infrastructure CLI
+        uses: oracle-actions/setup-oci-cli@v1
+        with:
+          version: 'latest'
+          
+      - name: Configure OCI CLI
+        run: |
+          mkdir -p ~/.oci
+          echo "${{ secrets.OCI_CONFIG }}" > ~/.oci/config
+          echo "${{ secrets.OCI_KEY }}" > ~/.oci/key.pem
+          chmod 600 ~/.oci/key.pem
+          
+      - name: Extract branch name
+        shell: bash
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
+        
+      - name: Set environment variables
+        run: |
+          if [ "${{ env.BRANCH_NAME }}" = "main" ]; then
+            echo "ENVIRONMENT=production" >> $GITHUB_ENV
+            echo "COMPUTE_INSTANCE_OCID=${{ secrets.PRODUCTION_COMPUTE_INSTANCE_OCID }}" >> $GITHUB_ENV
+          else
+            echo "ENVIRONMENT=staging" >> $GITHUB_ENV
+            echo "COMPUTE_INSTANCE_OCID=${{ secrets.STAGING_COMPUTE_INSTANCE_OCID }}" >> $GITHUB_ENV
+          fi
+          
+      - name: Create deployment script
+        run: |
+          cat > deploy.sh << 'EOF'
+          #!/bin/bash
+          
+          # Stop and remove existing containers
+          docker-compose down
+          
+          # Pull latest images
+          docker-compose pull
+          
+          # Start containers
+          docker-compose up -d
+          
+          # Clean up unused images
+          docker image prune -af
+          EOF
+          
+          chmod +x deploy.sh
+          
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          ORACLE_CONNECTION_STRING=${{ secrets.ORACLE_CONNECTION_STRING }}
+          ORACLE_USERNAME=${{ secrets.ORACLE_USERNAME }}
+          ORACLE_PASSWORD=${{ secrets.ORACLE_PASSWORD }}
+          ORACLE_WALLET_PASSWORD=${{ secrets.ORACLE_WALLET_PASSWORD }}
+          OBJECT_STORAGE_NAMESPACE=${{ secrets.OBJECT_STORAGE_NAMESPACE }}
+          OBJECT_STORAGE_BUCKET=${{ secrets.OBJECT_STORAGE_BUCKET }}
+          OBJECT_STORAGE_REGION=${{ secrets.OBJECT_STORAGE_REGION }}
+          EMAIL_SENDER=${{ secrets.EMAIL_SENDER }}
+          EMAIL_DELIVERY_ENDPOINT=${{ secrets.EMAIL_DELIVERY_ENDPOINT }}
+          OCI_COMPARTMENT_ID=${{ secrets.OCI_COMPARTMENT_ID }}
+          FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+          EOF
+          
+      - name: Update docker-compose.yml
+        run: |
+          sed -i "s|build:|image: ghcr.io/${{ github.repository }}/backend:${{ env.BRANCH_NAME }}|g" docker-compose.yml
+          sed -i "s|context: ./frontend|image: ghcr.io/${{ github.repository }}/frontend:${{ env.BRANCH_NAME }}|g" docker-compose.yml
+          
+      - name: Copy files to compute instance
+        run: |
+          oci compute instance get --instance-id ${{ env.COMPUTE_INSTANCE_OCID }} --query 'data."public-ip"' --raw-output > instance_ip.txt
+          INSTANCE_IP=$(cat instance_ip.txt)
+          
+          scp -o StrictHostKeyChecking=no -i ~/.oci/key.pem docker-compose.yml ubuntu@$INSTANCE_IP:~/
+          scp -o StrictHostKeyChecking=no -i ~/.oci/key.pem .env ubuntu@$INSTANCE_IP:~/
+          scp -o StrictHostKeyChecking=no -i ~/.oci/key.pem deploy.sh ubuntu@$INSTANCE_IP:~/
+          
+      - name: Deploy to compute instance
+        run: |
+          INSTANCE_IP=$(cat instance_ip.txt)
+          ssh -o StrictHostKeyChecking=no -i ~/.oci/key.pem ubuntu@$INSTANCE_IP "bash deploy.sh"
+          
+      - name: Verify deployment
+        run: |
+          INSTANCE_IP=$(cat instance_ip.txt)
+          curl -s -o /dev/null -w "%{http_code}" http://$INSTANCE_IP/health | grep 200

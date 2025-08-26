@@ -1,0 +1,14 @@
+apiVersion: v2
+name: ai-note-system
+description: A Helm chart for AI Note System on Oracle Cloud Infrastructure
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - ai
+  - notes
+  - knowledge-management
+  - oracle-cloud
+maintainers:
+  - name: AI Note System Team
+    email: support@ainotesystem.com

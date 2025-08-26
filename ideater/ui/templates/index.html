@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Ideater - AI-Powered IDEATION ENGINE{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-5">
+    <div class="col-lg-6">
+        <h1 class="display-4 fw-bold mb-3">Transform Your Ideas into Complete Architecture</h1>
+        <p class="lead mb-4">
+            Ideater is a complete thinking partner that expands your coding idea from a spark into full architecture with visual and interactive tools.
+        </p>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+            <a href="/projects/new" class="btn btn-primary btn-lg px-4 me-md-2">
+                <i class="fas fa-plus-circle me-2"></i>Start New Project
+            </a>
+            <a href="/docs" class="btn btn-outline-secondary btn-lg px-4">
+                <i class="fas fa-book me-2"></i>Learn More
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <img src="{{ url_for('static', path='img/hero-illustration.svg') }}" alt="Ideater Illustration" class="img-fluid">
+    </div>
+</div>
+
+<hr class="my-5">
+
+<div class="row mb-5">
+    <div class="col-12 text-center mb-4">
+        <h2 class="display-5 fw-bold">How It Works</h2>
+        <p class="lead">From idea to implementation in a structured workflow</p>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3 d-inline-flex mb-3">
+                    <i class="fas fa-lightbulb fa-2x text-primary"></i>
+                </div>
+                <h3 class="card-title h4">1. Idea Expander</h3>
+                <p class="card-text">
+                    Start with a simple idea and get refined statements, value propositions, and feature prioritization.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3 d-inline-flex mb-3">
+                    <i class="fas fa-sitemap fa-2x text-primary"></i>
+                </div>
+                <h3 class="card-title h4">2. Architecture & Flow</h3>
+                <p class="card-text">
+                    Get tech stack suggestions, database design, and interactive flowcharts for your application.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3 d-inline-flex mb-3">
+                    <i class="fas fa-code fa-2x text-primary"></i>
+                </div>
+                <h3 class="card-title h4">3. Code Blueprint</h3>
+                <p class="card-text">
+                    Generate pseudocode, API routes, file structure, and even an MVP boilerplate repository.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card border-0 bg-light">
+            <div class="card-body p-4">
+                <h3 class="h4 mb-3">Try it with an example:</h3>
+                <div class="mb-3">
+                    <textarea class="form-control form-control-lg" rows="3" placeholder="I want to build an app that helps students learn algorithms better."></textarea>
+                </div>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button class="btn btn-primary">
+                        <i class="fas fa-magic me-2"></i>Generate Ideas
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="my-5">
+
+<div class="row mb-5">
+    <div class="col-12 text-center mb-4">
+        <h2 class="display-5 fw-bold">Key Features</h2>
+        <p class="lead">Powerful tools to enhance your development process</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% for feature in [
+        {
+            "icon": "fas fa-brain",
+            "title": "Idea Expander",
+            "description": "Refine your idea with value propositions, USPs, and feature prioritization."
+        },
+        {
+            "icon": "fas fa-server",
+            "title": "Architecture Bot",
+            "description": "Get frontend/backend stack suggestions, database design, and hosting recommendations."
+        },
+        {
+            "icon": "fas fa-project-diagram",
+            "title": "Flowchart & UX View",
+            "description": "Create interactive flowcharts, sequence diagrams, and state machines."
+        },
+        {
+            "icon": "fas fa-code",
+            "title": "Pseudo-Code Generator",
+            "description": "Generate module-wise pseudocode, API routes, and file structures."
+        },
+        {
+            "icon": "fas fa-rocket",
+            "title": "MVP Generator",
+            "description": "Create an MVP checklist and generate boilerplate code repositories."
+        },
+        {
+            "icon": "fas fa-vial",
+            "title": "Test Plan Generator",
+            "description": "Generate unit test structures, test scenarios, and mock APIs."
+        },
+        {
+            "icon": "fas fa-road",
+            "title": "Roadmap Assistant",
+            "description": "Plan feature timelines, scalability, and monetization options."
+        },
+        {
+            "icon": "fas fa-users",
+            "title": "AI Whiteboard",
+            "description": "Collaborate with AI agents playing different roles in your project."
+        }
+    ] %}
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                        <i class="{{ feature.icon }} text-primary"></i>
+                    </div>
+                    <h3 class="card-title h5 mb-0">{{ feature.title }}</h3>
+                </div>
+                <p class="card-text">{{ feature.description }}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<hr class="my-5">
+
+<div class="row align-items-center mb-5">
+    <div class="col-lg-6">
+        <h2 class="display-6 fw-bold mb-3">Ready to transform your ideas?</h2>
+        <p class="lead mb-4">
+            Join Ideater today and experience the power of AI-assisted ideation and development.
+        </p>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+            <a href="/register" class="btn btn-primary btn-lg px-4 me-md-2">
+                <i class="fas fa-user-plus me-2"></i>Sign Up Free
+            </a>
+            <a href="/projects" class="btn btn-outline-secondary btn-lg px-4">
+                <i class="fas fa-project-diagram me-2"></i>Browse Projects
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="mermaid">
+                    graph TD
+                        A[Your Idea] --> B[Idea Expander]
+                        B --> C[Architecture Bot]
+                        C --> D[Flowchart View]
+                        D --> E[Code Blueprint]
+                        E --> F[MVP Generator]
+                        F --> G[Test Plan]
+                        G --> H[Roadmap]
+                        style A fill:#f9f9f9,stroke:#333,stroke-width:2px
+                        style B fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
+                        style C fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+                        style D fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+                        style E fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+                        style F fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px
+                        style G fill:#e0f2f1,stroke:#00796b,stroke-width:2px
+                        style H fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Example of how to handle the example form submission
+    document.addEventListener('DOMContentLoaded', function() {
+        const exampleForm = document.querySelector('textarea');
+        const generateButton = document.querySelector('.btn-primary');
+        
+        generateButton.addEventListener('click', function() {
+            const idea = exampleForm.value.trim();
+            if (idea) {
+                // In a real implementation, this would send the idea to the backend
+                // and redirect to the project page
+                alert('In a real implementation, this would process: ' + idea);
+                window.location.href = '/projects/new?idea=' + encodeURIComponent(idea);
+            } else {
+                alert('Please enter an idea first!');
+            }
+        });
+    });
+</script>
+{% endblock %}

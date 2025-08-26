@@ -1,0 +1,108 @@
+# AI Note System Requirements
+# This file categorizes dependencies as required or optional for specific features
+
+# =====================
+# REQUIRED DEPENDENCIES
+# =====================
+# These dependencies are required for the core functionality of the system
+
+# Core Utilities
+pyyaml>=6.0                    # Required for configuration loading
+python-dotenv>=1.0.0           # Required for environment variable loading
+requests>=2.28.0               # Required for API requests
+tqdm>=4.64.0                   # Required for progress bars
+sqlalchemy>=2.0.0              # Required for database management
+
+# Database Connectivity
+oracledb>=1.3.0                # Required for Oracle database connectivity
+oci>=2.90.0                    # Required for Oracle Cloud Infrastructure services
+
+# LLM API
+openai>=1.0.0                  # Required for OpenAI API access
+
+# =====================
+# OPTIONAL DEPENDENCIES
+# =====================
+# These dependencies are only required for specific features
+
+# PDF Processing [OPTIONAL]
+# Required for processing PDF files
+# Install with: pip install -r requirements.txt --install-option="--pdf"
+PyMuPDF>=1.20.0                # For PDF text extraction
+pdf2image>=1.16.0              # For PDF to image conversion
+
+# OCR [OPTIONAL]
+# Required for optical character recognition
+# Install with: pip install -r requirements.txt --install-option="--ocr"
+pytesseract>=0.3.10            # For text extraction from images
+
+# Speech Recognition [OPTIONAL]
+# Required for processing audio files and voice input
+# Install with: pip install -r requirements.txt --install-option="--speech"
+SpeechRecognition>=3.8.1       # For speech recognition
+openai-whisper>=20230314       # For advanced speech recognition
+
+# YouTube Processing [OPTIONAL]
+# Required for processing YouTube videos
+# Install with: pip install -r requirements.txt --install-option="--youtube"
+yt-dlp>=2023.3.4               # For downloading YouTube videos
+youtube-transcript-api>=0.6.0  # For extracting YouTube transcripts
+pydub>=0.25.1                  # For audio processing
+opencv-python>=4.5.5           # For video processing
+
+# Visualization [OPTIONAL]
+# Required for generating visualizations
+# Install with: pip install -r requirements.txt --install-option="--visualization"
+graphviz>=0.20.1               # For generating graphs
+mermaid-cli>=0.1.0             # For generating diagrams
+
+# Data Processing [OPTIONAL]
+# Required for advanced data processing
+# Install with: pip install -r requirements.txt --install-option="--data"
+pandas>=1.5.0                  # For data manipulation
+numpy>=1.23.0                  # For numerical operations
+
+# Embeddings [OPTIONAL]
+# Required for semantic search and topic linking
+# Install with: pip install -r requirements.txt --install-option="--embeddings"
+sentence-transformers>=2.2.2   # For generating text embeddings
+
+# Web & API
+# Required for web interface and API
+fastapi>=0.95.0                # For API endpoints
+uvicorn>=0.22.0                # For serving the API
+pydantic>=2.0.0                # For data validation
+email-validator>=2.0.0         # For email validation
+slowapi>=0.1.7                 # For rate limiting
+python-json-logger>=2.0.7      # For structured logging
+bullmq>=1.0.0                  # For low-memory job queues
+PyJWT>=2.6.0                   # For JWT authentication
+
+# Notion Integration [OPTIONAL]
+# Required for Notion integration
+# Install with: pip install -r requirements.txt --install-option="--notion"
+notion-client>=2.0.0           # For Notion API access
+
+# Google Integration [OPTIONAL]
+# Required for Google API integration
+# Install with: pip install -r requirements.txt --install-option="--google"
+google-api-python-client>=2.0.0 # For Google API access
+
+# Notifications [OPTIONAL]
+# Required for desktop notifications
+# Install with: pip install -r requirements.txt --install-option="--notifications"
+win10toast>=0.9.0; sys_platform == 'win32'  # For Windows notifications
+pync>=2.0.3; sys_platform == 'darwin'       # For macOS notifications
+notify2>=0.3.1; sys_platform == 'linux'     # For Linux notifications
+
+# Export [OPTIONAL]
+# Required for exporting notes to different formats
+# Install with: pip install -r requirements.txt --install-option="--export"
+markdown>=3.4.0                # For Markdown export
+weasyprint>=58.0               # For PDF export
+genanki>=0.13.0                # For Anki export
+
+# Testing [OPTIONAL]
+# Required for running tests
+# Install with: pip install -r requirements.txt --install-option="--testing"
+pytest>=7.3.0                  # For running tests

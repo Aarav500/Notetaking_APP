@@ -1,0 +1,26 @@
+services:
+  backend:
+    build:
+      context: ./ideater
+      dockerfile: Dockerfile
+    env_file: .env
+    expose:
+      - "8000"
+    restart: unless-stopped
+    networks:
+      - app-net
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge

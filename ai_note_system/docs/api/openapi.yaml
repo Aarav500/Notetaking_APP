@@ -1,0 +1,954 @@
+openapi: 3.0.3
+info:
+  title: Pansophy AI Note System API
+  description: |
+    API documentation for the Pansophy AI Note System.
+    This API provides access to AI-powered note-taking and knowledge management features.
+  version: 1.0.0
+  contact:
+    name: Pansophy Support
+    email: support@pansophy.ai
+servers:
+  - url: https://api.pansophy.ai/v1
+    description: Production server
+  - url: https://api-staging.pansophy.ai/v1
+    description: Staging server
+  - url: http://localhost:8000/v1
+    description: Local development server
+
+tags:
+  - name: Notes
+    description: Operations for managing notes
+  - name: AI Processing
+    description: AI-powered processing operations
+  - name: Visualization
+    description: Operations for generating visualizations
+  - name: Flashcards
+    description: Operations for managing flashcards
+  - name: Search
+    description: Search operations
+  - name: User
+    description: User management operations
+
+paths:
+  /notes:
+    get:
+      summary: Get all notes
+      description: Returns a list of all notes for the authenticated user
+      tags:
+        - Notes
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of notes to return
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          description: Number of notes to skip
+          schema:
+            type: integer
+            default: 0
+        - name: sort
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [created_desc, created_asc, updated_desc, updated_asc, title_asc, title_desc]
+            default: updated_desc
+        - name: tag
+          in: query
+          description: Filter by tag
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of notes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Note'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - BearerAuth: []
+    post:
+      summary: Create a new note
+      description: Creates a new note for the authenticated user
+      tags:
+        - Notes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteCreate'
+      responses:
+        '201':
+          description: The created note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - BearerAuth: []
+
+  /notes/{noteId}:
+    get:
+      summary: Get a note by ID
+      description: Returns a note by ID
+      tags:
+        - Notes
+      parameters:
+        - name: noteId
+          in: path
+          description: ID of the note to get
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: The requested note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - BearerAuth: []
+    put:
+      summary: Update a note
+      description: Updates an existing note
+      tags:
+        - Notes
+      parameters:
+        - name: noteId
+          in: path
+          description: ID of the note to update
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteUpdate'
+      responses:
+        '200':
+          description: The updated note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - BearerAuth: []
+    delete:
+      summary: Delete a note
+      description: Deletes a note by ID
+      tags:
+        - Notes
+      parameters:
+        - name: noteId
+          in: path
+          description: ID of the note to delete
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Note deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - BearerAuth: []
+
+  /ai/summarize:
+    post:
+      summary: Generate a summary
+      description: Generates a summary of the provided text
+      tags:
+        - AI Processing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  description: The text to summarize
+                length:
+                  type: string
+                  enum: [short, medium, long]
+                  default: medium
+                  description: The desired length of the summary
+                model:
+                  type: string
+                  default: gpt-4
+                  description: The AI model to use
+      responses:
+        '200':
+          description: The generated summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  summary:
+                    type: string
+                  model:
+                    type: string
+                  tokens:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - BearerAuth: []
+
+  /ai/keypoints:
+    post:
+      summary: Extract key points
+      description: Extracts key points from the provided text
+      tags:
+        - AI Processing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  description: The text to extract key points from
+                count:
+                  type: integer
+                  default: 5
+                  description: The number of key points to extract
+                model:
+                  type: string
+                  default: gpt-4
+                  description: The AI model to use
+      responses:
+        '200':
+          description: The extracted key points
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  keypoints:
+                    type: array
+                    items:
+                      type: string
+                  model:
+                    type: string
+                  tokens:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - BearerAuth: []
+
+  /ai/questions:
+    post:
+      summary: Generate questions
+      description: Generates questions based on the provided text
+      tags:
+        - AI Processing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  description: The text to generate questions from
+                count:
+                  type: integer
+                  default: 5
+                  description: The number of questions to generate
+                type:
+                  type: string
+                  enum: [multiple_choice, short_answer, true_false, fill_in_blank, mixed]
+                  default: mixed
+                  description: The type of questions to generate
+                model:
+                  type: string
+                  default: gpt-4
+                  description: The AI model to use
+      responses:
+        '200':
+          description: The generated questions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  questions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Question'
+                  model:
+                    type: string
+                  tokens:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - BearerAuth: []
+
+  /ai/misconceptions:
+    post:
+      summary: Detect misconceptions
+      description: Detects potential misconceptions in the provided text
+      tags:
+        - AI Processing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  description: The text to check for misconceptions
+                subject:
+                  type: string
+                  description: The subject area for context
+                model:
+                  type: string
+                  default: gpt-4
+                  description: The AI model to use
+      responses:
+        '200':
+          description: The detected misconceptions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  misconceptions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Misconception'
+                  model:
+                    type: string
+                  tokens:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - BearerAuth: []
+
+  /visualization/mindmap:
+    post:
+      summary: Generate a mind map
+      description: Generates a mind map from the provided text
+      tags:
+        - Visualization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  description: The text to generate a mind map from
+                title:
+                  type: string
+                  description: The title for the mind map
+                model:
+                  type: string
+                  default: gpt-4
+                  description: The AI model to use
+                format:
+                  type: string
+                  enum: [mermaid, json, svg]
+                  default: mermaid
+                  description: The output format for the mind map
+      responses:
+        '200':
+          description: The generated mind map
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mindmap:
+                    type: string
+                  format:
+                    type: string
+                  model:
+                    type: string
+                  tokens:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - BearerAuth: []
+
+  /visualization/image-mindmap:
+    post:
+      summary: Generate a mind map from an image
+      description: Generates a mind map from the provided image
+      tags:
+        - Visualization
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: The image to generate a mind map from
+                title:
+                  type: string
+                  description: The title for the mind map
+                model:
+                  type: string
+                  default: gpt-4-vision-preview
+                  description: The AI model to use
+                format:
+                  type: string
+                  enum: [mermaid, json, svg]
+                  default: mermaid
+                  description: The output format for the mind map
+      responses:
+        '200':
+          description: The generated mind map
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mindmap:
+                    type: string
+                  format:
+                    type: string
+                  model:
+                    type: string
+                  tokens:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - BearerAuth: []
+
+  /flashcards:
+    post:
+      summary: Generate flashcards
+      description: Generates flashcards from the provided text
+      tags:
+        - Flashcards
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  description: The text to generate flashcards from
+                count:
+                  type: integer
+                  default: 10
+                  description: The number of flashcards to generate
+                model:
+                  type: string
+                  default: gpt-4
+                  description: The AI model to use
+      responses:
+        '200':
+          description: The generated flashcards
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  flashcards:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Flashcard'
+                  count:
+                    type: integer
+                  model:
+                    type: string
+                  tokens:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - BearerAuth: []
+
+  /flashcards/image:
+    post:
+      summary: Generate flashcards from an image
+      description: Generates flashcards from the provided image
+      tags:
+        - Flashcards
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: The image to generate flashcards from
+                title:
+                  type: string
+                  description: The title for context
+                text:
+                  type: string
+                  description: Additional text for context
+                count:
+                  type: integer
+                  default: 5
+                  description: The number of flashcards to generate
+                model:
+                  type: string
+                  default: gpt-4-vision-preview
+                  description: The AI model to use
+      responses:
+        '200':
+          description: The generated flashcards
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  flashcards:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Flashcard'
+                  count:
+                    type: integer
+                  model:
+                    type: string
+                  tokens:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - BearerAuth: []
+
+  /search:
+    get:
+      summary: Search notes
+      description: Searches notes using the provided query
+      tags:
+        - Search
+      parameters:
+        - name: q
+          in: query
+          description: Search query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of results to return
+          schema:
+            type: integer
+            default: 10
+        - name: threshold
+          in: query
+          description: Similarity threshold (0-1)
+          schema:
+            type: number
+            format: float
+            default: 0.7
+        - name: tags
+          in: query
+          description: Filter by tags (comma-separated)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SearchResult'
+                  count:
+                    type: integer
+                  query:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - BearerAuth: []
+
+  /related-topics:
+    post:
+      summary: Find related topics
+      description: Finds topics related to the provided text
+      tags:
+        - Search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  description: The text to find related topics for
+                max_results:
+                  type: integer
+                  default: 5
+                  description: Maximum number of results to return
+                threshold:
+                  type: number
+                  format: float
+                  default: 0.75
+                  description: Similarity threshold (0-1)
+                hierarchical:
+                  type: boolean
+                  default: true
+                  description: Whether to organize results hierarchically
+                embedding_model:
+                  type: string
+                  default: all-MiniLM-L6-v2
+                  description: The embedding model to use
+      responses:
+        '200':
+          description: Related topics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  related_topics:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RelatedTopic'
+                  count:
+                    type: integer
+                  model:
+                    type: string
+                  threshold:
+                    type: number
+                    format: float
+                  hierarchical:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - BearerAuth: []
+
+components:
+  schemas:
+    Note:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        text:
+          type: string
+        summary:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        source_type:
+          type: string
+          enum: [text, pdf, image, video, audio, webpage]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        word_count:
+          type: integer
+        char_count:
+          type: integer
+        keypoints:
+          type: array
+          items:
+            type: string
+        glossary:
+          type: array
+          items:
+            $ref: '#/components/schemas/GlossaryTerm'
+        related_notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RelatedNote'
+
+    NoteCreate:
+      type: object
+      required:
+        - title
+        - text
+      properties:
+        title:
+          type: string
+        text:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        source_type:
+          type: string
+          enum: [text, pdf, image, video, audio, webpage]
+          default: text
+        generate_summary:
+          type: boolean
+          default: true
+        generate_keypoints:
+          type: boolean
+          default: true
+        generate_glossary:
+          type: boolean
+          default: false
+
+    NoteUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        text:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        generate_summary:
+          type: boolean
+        generate_keypoints:
+          type: boolean
+        generate_glossary:
+          type: boolean
+
+    GlossaryTerm:
+      type: object
+      properties:
+        term:
+          type: string
+        definition:
+          type: string
+
+    RelatedNote:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        similarity:
+          type: number
+          format: float
+
+    Question:
+      type: object
+      properties:
+        question:
+          type: string
+        type:
+          type: string
+          enum: [multiple_choice, short_answer, true_false, fill_in_blank]
+        options:
+          type: array
+          items:
+            type: string
+        answer:
+          type: string
+        explanation:
+          type: string
+
+    Misconception:
+      type: object
+      properties:
+        text:
+          type: string
+          description: The text containing the misconception
+        explanation:
+          type: string
+          description: Explanation of why it's a misconception
+        correction:
+          type: string
+          description: Suggested correction
+
+    Flashcard:
+      type: object
+      properties:
+        question:
+          type: string
+        answer:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        image_url:
+          type: string
+          format: uri
+
+    SearchResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        snippet:
+          type: string
+        similarity:
+          type: number
+          format: float
+        tags:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    RelatedTopic:
+      type: object
+      properties:
+        title:
+          type: string
+        path:
+          type: string
+        similarity:
+          type: number
+          format: float
+        summary:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

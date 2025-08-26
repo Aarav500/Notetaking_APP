@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-notes-config
+  labels:
+    app.kubernetes.io/name: ai-notes
+    app.kubernetes.io/part-of: ai-notes
+    app.kubernetes.io/component: config
+data:
+  PORT: "3000"
+  DB_TYPE: "sqlite"
+  SQLITE_DB: "/data/dev.sqlite"
+  DB_SYNCHRONIZE: "true"
+  JWT_EXPIRES_IN: "1d"
+  RESET_TOKEN_TTL_MS: "900000"
+  VITE_API_URL: "http://backend:3000/api"

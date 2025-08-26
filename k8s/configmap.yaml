@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ideater-config
+  labels:
+    app: ideater
+data:
+  APP_NAME: "Ideater"
+  CORS_ORIGINS: "http://localhost:5173,http://localhost:8000,http://localhost:3000"
+  ORACLE_WALLET_DIR: "/opt/oracle/wallet"

@@ -1,0 +1,45 @@
+# AI Note System Configuration
+
+# API Keys
+OPENAI_API_KEY: "your_key_here"
+NOTION_TOKEN: "your_token_here"
+
+# Notion Integration
+DATABASE_ID: "your_notion_db_id"
+
+# Input Settings
+PDF_EXTRACTION_METHOD: "PyMuPDF"  # Options: PyMuPDF, pdf2image+OCR
+OCR_ENGINE: "pytesseract"  # Options: pytesseract, EasyOCR
+SPEECH_RECOGNITION_ENGINE: "whisper"  # Options: whisper, SpeechRecognition
+
+# Processing Settings
+LLM_MODEL: "gpt-4"  # Options: gpt-4, gpt-3.5-turbo, mistral-7b-instruct, phi-3-mini, llama-3-8b
+EMBEDDING_MODEL: "text-embedding-ada-002"  # Options: text-embedding-ada-002, all-MiniLM-L6-v2
+SUMMARIZATION_MAX_LENGTH: 500
+KEYPOINTS_MAX_COUNT: 10
+ACTIVE_RECALL_QUESTIONS_COUNT: 5
+
+# Visualization Settings
+FLOWCHART_ENGINE: "mermaid"  # Options: mermaid, graphviz
+MINDMAP_ENGINE: "mermaid"
+TIMELINE_ENGINE: "mermaid"
+TREEGRAPH_ENGINE: "graphviz"
+
+# Output Settings
+DEFAULT_EXPORT_FORMAT: "markdown"  # Options: markdown, pdf, anki
+NOTION_AUTO_SYNC: true
+SPACED_REPETITION_ALGORITHM: "SM-2"  # Options: SM-2, Leitner
+
+# Database Settings
+DATABASE_TYPE: "sqlite"  # Options: json, sqlite
+DATABASE_PATH: "../data/pansophy.db"
+
+# Logging Settings
+LOG_LEVEL: "INFO"  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+LOG_FILE: "../logs/ai_note_system.log"
+
+# Advanced Settings
+CACHE_EMBEDDINGS: true
+AUTO_LINKING_THRESHOLD: 0.75  # Similarity threshold for auto-linking (0-1)
+MISCONCEPTION_CHECK_ENABLED: true
+SIMPLIFICATION_ENABLED: true

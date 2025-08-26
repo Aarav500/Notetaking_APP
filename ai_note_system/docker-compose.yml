@@ -1,0 +1,28 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: ./nestjs_backend
+    env_file:
+      - ./nestjs_backend/.env
+    ports:
+      - "3000:3000"
+    networks:
+      - ai-notes
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:3000/api
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - ai-notes
+
+networks:
+  ai-notes:
+    driver: bridge

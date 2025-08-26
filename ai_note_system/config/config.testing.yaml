@@ -1,0 +1,52 @@
+# AI Note System Testing Configuration
+
+# API Keys
+OPENAI_API_KEY: "your_key_here"
+NOTION_TOKEN: "your_token_here"
+
+# Notion Integration
+DATABASE_ID: "your_notion_db_id"
+
+# Input Settings
+PDF_EXTRACTION_METHOD: "PyMuPDF"
+OCR_ENGINE: "pytesseract"
+SPEECH_RECOGNITION_ENGINE: "whisper"
+
+# Processing Settings
+LLM_MODEL: "gpt-3.5-turbo"  # Using cheaper model for testing
+EMBEDDING_MODEL: "text-embedding-ada-002"
+SUMMARIZATION_MAX_LENGTH: 500
+KEYPOINTS_MAX_COUNT: 10
+ACTIVE_RECALL_QUESTIONS_COUNT: 5
+
+# Visualization Settings
+FLOWCHART_ENGINE: "mermaid"
+MINDMAP_ENGINE: "mermaid"
+TIMELINE_ENGINE: "mermaid"
+TREEGRAPH_ENGINE: "graphviz"
+
+# Output Settings
+DEFAULT_EXPORT_FORMAT: "markdown"
+NOTION_AUTO_SYNC: false  # Disabled in testing
+SPACED_REPETITION_ALGORITHM: "SM-2"
+
+# Database Settings
+DATABASE_TYPE: "sqlite"
+DATABASE_PATH: "../data/pansophy_test.db"  # Testing-specific database
+
+# Logging Settings
+LOG_LEVEL: "INFO"
+LOG_FILE: "../logs/ai_note_system_test.log"
+
+# Advanced Settings
+CACHE_EMBEDDINGS: true
+AUTO_LINKING_THRESHOLD: 0.75
+MISCONCEPTION_CHECK_ENABLED: true
+SIMPLIFICATION_ENABLED: true
+
+# Testing-specific settings
+TESTING_MODE: true
+USE_MOCK_DATA: true  # Use mock data for testing
+SKIP_SLOW_OPERATIONS: true  # Skip slow operations during testing
+ENABLE_TEST_ASSERTIONS: true  # Enable additional assertions for testing
+RECORD_TEST_METRICS: true  # Record metrics during testing

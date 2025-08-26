@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/part-of: ai-notes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          # Replace with your registry image (e.g., ghcr.io/owner/ai-notes-backend:TAG)
+          image: ai-notes-backend:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: ai-notes-config
+            - secretRef:
+                name: ai-notes-db
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /api/ai/health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/ai/health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            # Stub mount for Oracle Wallet (emptyDir placeholder). Replace with a real Secret/volume as needed.
+            - name: oracle-wallet
+              mountPath: /opt/oracle/wallet
+              readOnly: true
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: oracle-wallet
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/part-of: ai-notes
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP

@@ -1,0 +1,144 @@
+# Default values for ai-note-system Helm chart
+# This is a YAML-formatted file.
+
+replicaCount: 2
+
+image:
+  repository: <REGISTRY_REGION>.ocir.io/<TENANCY_NAMESPACE>/ai-note-system
+  tag: latest
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: oci-registry-secret
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/path: "/metrics"
+  prometheus.io/port: "8000"
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: ai-note-system.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: ai-note-system-tls
+      hosts:
+        - ai-note-system.example.com
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Environment variables
+env:
+  # Oracle Database configuration
+  oracleConnectionString: ""
+  oracleUsername: ""
+  oraclePassword: ""
+  oracleWalletLocation: "/app/wallet"
+  
+  # Application configuration
+  logLevel: "INFO"
+  port: "8000"
+  
+  # Model configuration
+  modelPath: "/app/models"
+  modelVersion: "latest"
+  
+  # Object Storage configuration
+  objectStorageBucket: "ai-note-system"
+  objectStorageNamespace: ""
+  
+  # Email configuration
+  emailEnabled: "true"
+  emailSender: "noreply@ainotesystem.com"
+
+# Persistence for models and wallet
+persistence:
+  enabled: true
+  models:
+    storageClass: "oci-bv"
+    size: 10Gi
+    mountPath: "/app/models"
+  wallet:
+    storageClass: "oci-bv"
+    size: 1Gi
+    mountPath: "/app/wallet"
+
+# Monitoring configuration
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s
+    namespace: monitoring
+
+# Model training configuration
+modelTraining:
+  enabled: true
+  schedule: "0 0 * * 0"  # Weekly on Sunday at midnight
+  resources:
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+    requests:
+      cpu: 2000m
+      memory: 4Gi
+  gpu:
+    enabled: true
+    count: 1
+    type: "nvidia-tesla-t4"
