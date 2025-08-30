@@ -1,0 +1,140 @@
+name: CI/CD - Build -> GHCR -> Deploy to VM
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+env:
+  IMAGE_PREFIX: ghcr.io/Aarav500/Notetaking_APP
+  SERVICES: frontend,nestjs_backend,ideater
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU (for multi-arch safety)
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USER || github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      # Build and push frontend
+      - name: Build & push frontend
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}-frontend:latest
+          cache-from: type=registry,ref=${{ env.IMAGE_PREFIX }}-frontend:cache
+          cache-to: type=registry,ref=${{ env.IMAGE_PREFIX }}-frontend:cache,mode=max
+
+      # Build and push nestjs backend
+      - name: Build & push nestjs_backend
+        uses: docker/build-push-action@v4
+        with:
+          context: ./ai_note_system/nestjs_backend
+          file: ./ai_note_system/nestjs_backend/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}-nestjs_backend:latest
+          cache-from: type=registry,ref=${{ env.IMAGE_PREFIX }}-nestjs_backend:cache
+          cache-to: type=registry,ref=${{ env.IMAGE_PREFIX }}-nestjs_backend:cache,mode=max
+
+      # Build and push ideater
+      - name: Build & push ideater
+        uses: docker/build-push-action@v4
+        with:
+          context: ./ideater
+          file: ./ideater/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}-ideater:latest
+          cache-from: type=registry,ref=${{ env.IMAGE_PREFIX }}-ideater:cache
+          cache-to: type=registry,ref=${{ env.IMAGE_PREFIX }}-ideater:cache,mode=max
+
+      - name: Prepare deploy bundle
+        run: |
+          set -e
+          rm -rf deploy_bundle || true
+          mkdir -p deploy_bundle/k8s
+          cp -v deploy.sh deploy_bundle/ || (echo "deploy.sh missing" && exit 1)
+          cp -rv k8s/* deploy_bundle/k8s/ || echo "k8s/ missing or empty; add manifests to repo"
+          # Write deploy.env from ENV secret (primary)
+          echo "${{ secrets.ENV }}" > deploy_bundle/deploy.env
+          # Append GHCR creds for VM-side use (so the VM can create imagePullSecret)
+          echo "GHCR_USER=${{ secrets.GHCR_USER }}" >> deploy_bundle/deploy.env
+          echo "GHCR_PAT=${{ secrets.GHCR_PAT }}" >> deploy_bundle/deploy.env
+          # Optional overrides for detection (if you want to force paths)
+          echo "MERMAID_PATH=${{ secrets.MERMAID_PATH }}" >> deploy_bundle/deploy.env
+          echo "GRAPHVIZ_PATH=${{ secrets.GRAPHVIZ_PATH }}" >> deploy_bundle/deploy.env
+          echo "LOG_FILE_PATH=${{ secrets.LOG_FILE_PATH }}" >> deploy_bundle/deploy.env
+          chmod 600 deploy_bundle/deploy.env
+
+      - name: Create VM key file from VM JSON secret
+        env:
+          VM_JSON: ${{ secrets.VM }}
+        run: |
+          python3 - <<'PY'
+import json,os,sys
+vm = json.loads(os.environ['VM_JSON'])
+key = vm.get('ssh_key') or vm.get('ssh_private_key') or vm.get('key')
+if not key:
+  print('VM secret must contain ssh_key (private key) field'); sys.exit(2)
+open('vm_key','w').write(key)
+os.chmod('vm_key', 0o600)
+print('vm_key written')
+print(json.dumps({'host':vm.get('host'),'user':vm.get('user'),'port':vm.get('port',22)}))
+PY
+
+      - name: Copy deploy bundle to VM (scp)
+        env:
+          VM_JSON: ${{ secrets.VM }}
+        run: |
+          python3 - <<'PY'
+import json,subprocess,sys,os
+vm = json.loads(os.environ['VM_JSON'])
+host=vm['host']; user=vm['user']; port=str(vm.get('port',22))
+print("SCP deploy_bundle -> {}@{}:/opt/pansophy/".format(user,host))
+subprocess.check_call(['scp','-o','StrictHostKeyChecking=no','-i','vm_key','-P',port,'-r','deploy_bundle', f"{user}@{host}:/opt/pansophy/"])
+print("SCP done")
+PY
+
+      - name: Run remote deploy.sh on VM
+        env:
+          VM_JSON: ${{ secrets.VM }}
+        run: |
+          python3 - <<'PY'
+import json,subprocess,shlex,os
+vm = json.loads(os.environ['VM_JSON'])
+host=vm['host']; user=vm['user']; port=str(vm.get('port',22))
+remote_cmd = (
+  "sudo mkdir -p /opt/pansophy || true; "
+  "sudo chown {user}:{user} /opt/pansophy || true; "
+  "cd /opt/pansophy/deploy_bundle; "
+  "chmod +x deploy.sh || true; "
+  # set base64 env so remote script can decode; safer than sending raw .env as command line
+  "export GITHUB_ENV_B64=$(base64 -w0 deploy.env); "
+  "sudo ./deploy.sh"
+).format(user=user)
+ssh_cmd = f"ssh -o StrictHostKeyChecking=no -i vm_key -p {port} {user}@{host} {shlex.quote(remote_cmd)}"
+print('Running remote deploy...')
+subprocess.check_call(ssh_cmd, shell=True)
+PY
